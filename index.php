@@ -826,7 +826,7 @@ $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'dashboard';
                     </div>
                     <?php
                     // Calcular valores para o resumo (exemplo simplificado)
-                    $salario = 4200.00;
+                    $salario = 3000.00;
                     $gastos_fixos = 1850.00;
                     $parcelamentos = 750.00;
                     $gastos_variaveis = 600.00;
