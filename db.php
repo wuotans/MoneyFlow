@@ -40,6 +40,16 @@ try {
         data_inicio DATE NOT NULL,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS rendas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    descricao TEXT NOT NULL,
+    valor REAL NOT NULL,
+    tipo TEXT NOT NULL, -- 'salario' ou 'extra'
+    data DATE NOT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )");
     
     // Inserir usuários iniciais se não existirem
     $stmt = $pdo->query("SELECT COUNT(*) FROM usuarios");
@@ -51,8 +61,8 @@ try {
         
         $pdo->exec("INSERT INTO usuarios (username, password, nome, role) VALUES 
             ('admin', '$adminPass', 'Administrador', 'admin'),
-            ('user1', '$user1Pass', 'Gabriele', 'user'),
-            ('user2', '$user2Pass', 'Matheus', 'user')");
+            ('user1', '$user1Pass', 'Gabriele', 'gabriele'),
+            ('user2', '$user2Pass', 'Matheus', 'matheus')");
     }
     
 } catch (PDOException $e) {
