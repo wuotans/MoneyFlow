@@ -10,6 +10,38 @@ function isAdmin() {
     return isset($_SESSION['usuario']) && $_SESSION['usuario']['role'] == 'admin';
 }
 
+// Funções para calcular dados do dashboard
+function getTotalRendas($pdo) {
+    $stmt = $pdo->prepare("SELECT SUM(valor) as total FROM rendas");
+    $stmt->execute();
+    return $stmt->fetchColumn() ?: 0;
+}
+
+function getTotalGastos($pdo) {
+    $stmt = $pdo->prepare("SELECT SUM(valor) as total FROM gastos");
+    $stmt->execute();
+    return $stmt->fetchColumn() ?: 0;
+}
+
+function getTotalParcelamentos($pdo) {
+    $stmt = $pdo->prepare("SELECT SUM(valor_total) as total FROM parcelamentos");
+    $stmt->execute();
+    return $stmt->fetchColumn() ?: 0;
+}
+
+function getParcelasRestantes($pdo) {
+    $stmt = $pdo->prepare("SELECT SUM(qtd_parcelas - parcela_atual) as restantes FROM parcelamentos");
+    $stmt->execute();
+    return $stmt->fetchColumn() ?: 0;
+}
+
+function getGastosPorCategoria($pdo) {
+    $stmt = $pdo->prepare("SELECT categoria, SUM(valor) as total FROM gastos GROUP BY categoria");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 // Processar ações
 if (isset($_GET['action'])) {
     switch ($_GET['action']) {
@@ -924,21 +956,30 @@ $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'dashboard';
             <div class="container">
                 <h2 class="section-title"><i class="fas fa-chart-line"></i> Dashboard</h2>
                 
+                <?php
+                // Calcular dados para o dashboard
+                $total_rendas = getTotalRendas($pdo);
+                $total_gastos = getTotalGastos($pdo);
+                $total_parcelamentos = getTotalParcelamentos($pdo);
+                $parcelas_restantes = getParcelasRestantes($pdo);
+                $saldo_livre = $total_rendas - $total_gastos - $total_parcelamentos;
+                ?>
+                
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value positive">R$ 4.200</div>
-                        <div class="stat-label">Salário</div>
+                        <div class="stat-value positive">R$ <?= number_format($total_rendas, 2, ',', '.') ?></div>
+                        <div class="stat-label">Rendas Totais</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value positive">R$ 1.850</div>
+                        <div class="stat-value positive">R$ <?= number_format($saldo_livre, 2, ',', '.') ?></div>
                         <div class="stat-label">Saldo Livre</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">3</div>
+                        <div class="stat-value"><?= $parcelas_restantes ?></div>
                         <div class="stat-label">Parcelas Restantes</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value negative">R$ 2.350</div>
+                        <div class="stat-value negative">R$ <?= number_format($total_gastos, 2, ',', '.') ?></div>
                         <div class="stat-label">Gastos Totais</div>
                     </div>
                 </div>
@@ -1590,20 +1631,32 @@ $activeTab = isset($_GET['tab']) ? $_GET['tab'] : 'dashboard';
             });
         });
 
+        
         // Inicialização de gráficos
         document.addEventListener('DOMContentLoaded', function() {
+            // Obter dados de categorias do PHP
+            const categoriasData = <?= json_encode(getGastosPorCategoria($pdo)) ?>;
+            
+            // Preparar dados para o gráfico de pizza
+            const categoriasLabels = [];
+            const categoriasValues = [];
+            const cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF'];
+            
+            categoriasData.forEach((categoria, index) => {
+                categoriasLabels.push(categoria['categoria']);
+                categoriasValues.push(categoria['total']);
+            });
+
             // Gráfico de distribuição de gastos
             const gastosCtx = document.getElementById('gastosChart')?.getContext('2d');
             if (gastosCtx) {
                 new Chart(gastosCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
+                        labels: categoriasLabels,
                         datasets: [{
-                            data: [25, 15, 30, 10, 8, 7, 5],
-                            backgroundColor: [
-                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF'
-                            ],
+                            data: categoriasValues,
+                            backgroundColor: cores,
                             borderWidth: 1
                         }]
                     },

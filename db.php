@@ -61,8 +61,8 @@ try {
         
         $pdo->exec("INSERT INTO usuarios (username, password, nome, role) VALUES 
             ('admin', '$adminPass', 'Administrador', 'admin'),
-            ('user1', '$user1Pass', 'Gabriele', 'gabriele'),
-            ('user2', '$user2Pass', 'Matheus', 'matheus')");
+            ('gabriele', '$user1Pass', 'Gabriele', 'user'),
+            ('matheus', '$user2Pass', 'Matheus', 'user')");
     }
     
 } catch (PDOException $e) {
